@@ -181,7 +181,6 @@ class TemporaryShowyourworkRepository:
         args = ""
         if self.dry_run:
             args += " --dry-run"
-
         get_stdout(
             "showyourwork build" + args,
             shell=True,
