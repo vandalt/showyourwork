@@ -20,6 +20,7 @@ workflow_replace_with = """      - name: Install TinyTex for matplotlib LaTeX re
 
 
 # A figure script that requires LaTeX
+# An extra comment just to have some sort of change
 figure_script = r"""
 # Ensure ~/bin is in the PATH so matplotlib can find latex
 import os
