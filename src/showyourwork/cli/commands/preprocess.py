@@ -8,6 +8,9 @@ def preprocess(snakemake_args=(), cores=1, conda_frontend="conda"):
     Args:
         snakemake_args (list, optional): Additional options to pass to Snakemake.
     """
+    snakemake_args = tuple(
+        arg for arg in snakemake_args if arg not in ["--dry-run", "-n"]
+    )
     snakefile = paths.showyourwork().workflow / "prep.smk"
     run_snakemake(
         snakefile.as_posix(),
