@@ -167,7 +167,7 @@ def patch_snakemake_cache(zenodo_doi, sandbox_doi):
                     # Cache miss; not fatal
                     exceptions.restore_trace()
                     logger.warning(
-                        "Required version of file not found in cache: " f"{outputfile}."
+                        f"Required version of file not found in cache: {outputfile}."
                     )
                     if config.get("github_actions") and not config.get(
                         "run_cache_rules_on_ci"
@@ -279,11 +279,13 @@ def patch_snakemake_logging():
 
     # Suppress *all* Snakemake output to the terminal (unless verbose);
     # save it all for the logs!
+    verbose = snakemake.workflow.config.get("verbose", False)  # From showyourwork.yml
+    verbose = verbose or snakemake.workflow.workflow.output_settings.verbose  # from CLI
     if hasattr(snakemake_logger, "handlers"):
         for handler in snakemake_logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 handler.setLevel(logging.DEBUG)
-            elif not snakemake.workflow.config.get("verbose", False):
+            elif not verbose:
                 handler.setLevel(logging.CRITICAL)
     elif hasattr(snakemake_logger, "logger") and hasattr(
         snakemake_logger.logger, "handlers"
@@ -293,7 +295,7 @@ def patch_snakemake_logging():
         for handler in snakemake_logger.logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 handler.setLevel(logging.DEBUG)
-            elif not snakemake.workflow.config.get("verbose", False):
+            elif not verbose:
                 handler.setLevel(logging.CRITICAL)
 
     # Custom Snakemake stdout handler
