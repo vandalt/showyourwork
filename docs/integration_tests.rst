@@ -96,15 +96,38 @@ the output from the Python script.
 That's it! The parent class (``TemporaryShowyourworkRepository``) takes care
 of the rest.
 
-Note that several integration tests are marked with the ``remote`` mark (using ``pytest.mark``),
+Remote tests
+------------
+
+Note that several integration tests are marked with the ``remote`` mark (using ``pytest.mark``).
+This means that they will create a temporary remote repository on GitHub with
+the same name as the test (but in ``snake_case`` instead of ``camelCase``);
+if a repository already exists, the test will force-push new commits to it,
+mimicking the behavior of a newly created repository.
+
+Running locally
+^^^^^^^^^^^^^^^
+
+By default, the tests create the repository under the `github.com/showyourwork` organization,
 which means they require push access to the ``showyourwork`` organization in order
 to test the entire workflow, including the ``showyourwork-action`` and the generation
 of the PDF when running on the remote.
-Each of these tests creates a temporary repository in the
-`github.com/showyourwork` organization with the same name as the test
-(but in ``snake_case`` instead of ``camelCase``); if a repository already exists,
-the test will force-push new commits to it, mimicking the behavior of a newly
-created repository.
+
+Since most contributors and users do not have push access to the ``showyourowrk`` organization,
+there is also a flag to create the test repositories under a regular user.
+Users first need to
+`create a personal access token <https://github.com/settings/personal-access-tokens>`_
+with read access to your public repositories, and **read and write** access to actions,
+administration, code, and workflows.
+The token should then be stored under the ``GH_API_KEY`` environment variable.
+Once this is done, users should be able to run the integration tests with:
+
+.. code-block:: bash
+
+    python -m pytest tests/integration --remote --action-spec git+https://github.com/showyourwork/showyourwork.git --no-org
+
+Running via GitHub actions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Remote tests are spawned from the `remote_integration_tests.yml`
 workflow in `.github/workflows` of the ``showyourwork/showyourwork`` repository
