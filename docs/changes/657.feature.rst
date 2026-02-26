@@ -1,0 +1,2 @@
+Execute ``prep.smk`` even with ``--dry-run`` and properly pass ``--dry-run`` to snakemake for the build step.
+Ensure that the snakemake output gets printed to STDOUT when ``--verbose`` is passed at the CLI.
