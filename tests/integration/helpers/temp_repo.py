@@ -18,6 +18,18 @@ from showyourwork.zenodo import Zenodo
 SANDBOX = Path(__file__).absolute().parents[1] / "sandbox"
 RESOURCES = Path(__file__).absolute().parents[1] / "resources"
 
+# GitHub org can be set via:
+# 1. --github-org pytest CLI option (or --no-org to force personal account)
+# 2. SHOWYOURWORK_TEST_ORG environment variable (defaults to "showyourwork")
+# Set to empty string or "none" to use personal account
+GITHUB_ORG = os.getenv("SHOWYOURWORK_TEST_ORG", "showyourwork") or None
+GITHUB_USER = GITHUB_ORG or gitapi.get_authenticated_user()
+if GITHUB_USER is None:
+    raise TypeError(
+        "GITHUB_ORG is None and no github user found. "
+        "Specify an org or register an API token under GH_API_KEY"
+    )
+
 
 class TemporaryShowyourworkRepository:
     """
@@ -107,7 +119,7 @@ class TemporaryShowyourworkRepository:
         # Create a new one
         print(f"[{self.repo}] Creating local repo `tests/sandbox/{self.repo}`...")
         get_stdout(
-            f"{command} {options} showyourwork/{self.repo}",
+            f"{command} {options} {GITHUB_USER}/{self.repo}",
             cwd=self.root_path,
             shell=True,
         )
@@ -142,11 +154,11 @@ class TemporaryShowyourworkRepository:
         """Create the repo on GitHub if needed."""
         print(
             f"[{self.repo}] Setting up remote GitHub repo "
-            f"`showyourwork/{self.repo}`..."
+            f"`{GITHUB_USER}/{self.repo}`..."
         )
         gitapi.create_repo(
             self.repo,
-            org="showyourwork",
+            org=GITHUB_ORG,
             description="Temporary test repository for showyourwork",
             private=False,
         )
@@ -154,7 +166,7 @@ class TemporaryShowyourworkRepository:
     def clear_remote_cache(self):
         """Clear the remote GitHub Actions cache."""
         print(f"[{self.repo}] Clearing the Actions cache...")
-        gitapi.clear_cache(self.repo, org="showyourwork")
+        gitapi.clear_cache(self.repo, org=GITHUB_ORG)
 
     def git_commit(self):
         """Add and commit all files in the local repo."""
@@ -198,11 +210,11 @@ class TemporaryShowyourworkRepository:
         On success, returns, otherwise raises an Exception.
 
         """
-        print(f"[{self.repo}] Pushing to `showyourwork/{self.repo}`...")
+        print(f"[{self.repo}] Pushing to `{GITHUB_USER}/{self.repo}`...")
         get_stdout(
             "git push --force https://x-access-token:"
             f"{gitapi.get_access_token()}"
-            f"@github.com/showyourwork/{self.repo} main",
+            f"@github.com/{GITHUB_USER}/{self.repo} main",
             shell=True,
             cwd=self.cwd,
             secrets=[gitapi.get_access_token()],
@@ -223,7 +235,7 @@ class TemporaryShowyourworkRepository:
                 url,
             ) = gitapi.get_workflow_run_status(
                 self.repo,
-                org="showyourwork",
+                org=GITHUB_ORG,
                 q={"event": "push", "head_sha": head_sha},
             )
             if status == "completed":
@@ -239,12 +251,11 @@ class TemporaryShowyourworkRepository:
             elif n < self.action_max_tries - 1:
                 print(
                     f"[{self.repo}] Waiting {self.action_interval} seconds for "
-                    f"workflow to finish ({n+2}/{self.action_max_tries})..."
+                    f"workflow to finish ({n + 2}/{self.action_max_tries})..."
                 )
                 await asyncio.sleep(self.action_interval)
         raise Exception(
-            f"[{self.repo}] GitHub Actions workflow timed out.\n"
-            f"For details, see {url}"
+            f"[{self.repo}] GitHub Actions workflow timed out.\nFor details, see {url}"
         )
 
     def delete_zenodo(self):
@@ -258,8 +269,8 @@ class TemporaryShowyourworkRepository:
 
     def delete_remote(self):
         """Delete the remote repo."""
-        print(f"[{self.repo}] Deleting GitHub repo " f"`showyourwork/{self.repo}`...")
-        gitapi.delete_repo(self.repo, org="showyourwork")
+        print(f"[{self.repo}] Deleting GitHub repo `{GITHUB_USER}/{self.repo}`...")
+        gitapi.delete_repo(self.repo, org=GITHUB_ORG)
 
     def delete_local(self):
         """Delete the local repo."""
